@@ -113,17 +113,17 @@ typedef struct {
   byte temp;
   byte humi :1;
   byte wind :7;
-  int rain :10;
+  int  rain :10;
   byte lobat :1;
 }
 PayloadOut;
 PayloadOut measureOut;
 
 typedef struct {
-  byte temp;
-  byte humi :1;
-  byte mov :7;
-  int light :10;
+  byte light;
+  byte moved :1;
+  byte humi :7;
+  int  temp :10;
   byte lobat :1;
 }
 PayloadIn;
@@ -944,7 +944,7 @@ void homeScreenIn()
   lcd.setCursor(6,2);
   lcd.print("M");
   lcd.setCursor(9,2);
-  lcd.print(measureIn.mov);
+  lcd.print(measureIn.moved);
   lcd.setCursor(0,3);
   lcd.print("B lvl ");
   lcd.setCursor(0,3);
