@@ -111,28 +111,20 @@ RTC_Plug RTC (i2cBus);
 
 typedef struct {
   byte temp;
-byte humi :
-  1;
-byte wind :
-  7;
-int rain :
-  10;
-byte lobat :
-  1;
+  byte humi :1;
+  byte wind :7;
+  int rain :10;
+  byte lobat :1;
 }
 PayloadOut;
 PayloadOut measureOut;
 
 typedef struct {
   byte temp;
-byte humi :
-  1;
-byte mov :
-  7;
-int light :
-  10;
-byte lobat :
-  1;
+  byte humi :1;
+  byte mov :7;
+  int light :10;
+  byte lobat :1;
 }
 PayloadIn;
 PayloadIn measureIn;
@@ -154,8 +146,6 @@ int mstamp;
 byte out = 1;
 unsigned long interval = 5000;
 unsigned long previousMillis;
-unsigned long intervalLed = 1000;
-unsigned long previousMillisLed;
 static char cmd;
 int lastMinute;
 static byte value, stack[RF12_MAXDATA], top, sendLen, dest, quiet;
@@ -507,10 +497,10 @@ static void df_initialize () {
 
     scanForLastSave();
 
-    Serial.print("DF I ");
+   /* Serial.print("DF I ");
     Serial.print(dfLastPage);
     Serial.print(' ');
-    Serial.println(dfBuf.seqnum);
+    Serial.println(dfBuf.seqnum);*/
 
     // df_wipe();
     df_saveBuf(); //XXX
@@ -592,10 +582,10 @@ static void df_replay (word seqnum, long asof) {
     for (word i = 0; i < sizeof dfBuf; ++i)
       crc = _crc16_update(crc, dfBuf.data[i]);
     if (crc != 0) {
-      Serial.print("DF C? ");
+    /*  Serial.print("DF C? ");
       Serial.print(page);
       Serial.print(' ');
-      Serial.println(crc);
+      Serial.println(crc);*/
       continue;
     }
     // report each entry as "R seqnum time <data...>"
@@ -785,7 +775,7 @@ void setup() {
   }
   else {
     config.nodeId = 0x41; // 433 MHz, node 1
-    config.group = 0xD4;  // default group 212
+    config.group = 0x4b;  // default group 75
     saveConfig();
   }
 
@@ -880,16 +870,16 @@ void homeScreenOut()
   lcd.clear();
   lcd.print("Miller House Out");
   lcd.setCursor(0,1);
-  lcd.print("Ti");
-  lcd.setCursor(3,1);
+  lcd.print("T");
+  lcd.setCursor(2,1);
     DateTime now = RTC.now();
   lcd.print(now.hour());
   lcd.print(':');
   if (now.minute()<10)
     lcd.print("0");
   lcd.print(now.minute());
-  lcd.setCursor(9,1);
-  lcd.print("Te ");
+  lcd.setCursor(8,1);
+  lcd.print("T ");
   lcd.print(measureOut.temp);
   lcd.write(byte(0));
   lcd.print(" F");
@@ -898,7 +888,7 @@ void homeScreenOut()
   lcd.setCursor(2,2);
   lcd.print(measureOut.wind);
   lcd.setCursor(6,2);
-  lcd.print("MPH");
+  lcd.print("mph");
   lcd.setCursor(10,2);
   lcd.print("R");
   lcd.setCursor(12,2);
@@ -934,16 +924,16 @@ void homeScreenIn()
   lcd.clear();
   lcd.print(F("Miller House In"));
   lcd.setCursor(0,1);
-  lcd.print("Ti");
-  lcd.setCursor(3,1);
+  lcd.print("T");
+  lcd.setCursor(2,1);
   DateTime now = RTC.now();
   lcd.print(now.hour());
   lcd.print(':');
   if (now.minute()<10)
     lcd.print("0");
   lcd.print(now.minute());
-  lcd.setCursor(9,1);
-  lcd.print("Te ");
+  lcd.setCursor(8,1);
+  lcd.print("T ");
   lcd.print(measureIn.temp);
   lcd.write(byte(0));
   lcd.print(" F");
