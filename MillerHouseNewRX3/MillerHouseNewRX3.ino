@@ -785,7 +785,7 @@ void setup() {
 
 void loop() {
 
-  lcd.setCursor(3,1);
+  lcd.setCursor(2,1);
   DateTime now = RTC.now();
   lcd.print(now.hour());
   lcd.print(':');
@@ -887,14 +887,10 @@ void homeScreenOut()
   lcd.print("W");
   lcd.setCursor(2,2);
   lcd.print(measureOut.wind);
-  lcd.setCursor(6,2);
-  lcd.print("mph");
-  lcd.setCursor(10,2);
-  lcd.print("R");
-  lcd.setCursor(12,2);
+  lcd.print(" mph ");
+  lcd.print("R ");
   lcd.print(measureOut.rain);
-  lcd.setCursor(15,2);
-  lcd.print("IN");
+  lcd.print(" in");
   lcd.setCursor(0,3);
   lcd.print("Bat lvl ");
   lcd.setCursor(8,3);
@@ -924,8 +920,7 @@ void homeScreenIn()
   lcd.clear();
   lcd.print(F("Miller House In"));
   lcd.setCursor(0,1);
-  lcd.print("T");
-  lcd.setCursor(2,1);
+  lcd.print("T ");
   DateTime now = RTC.now();
   lcd.print(now.hour());
   lcd.print(':');
@@ -938,18 +933,12 @@ void homeScreenIn()
   lcd.write(byte(0));
   lcd.print(" F");
   lcd.setCursor(0,2);
-  lcd.print("L");
-  lcd.setCursor(2,2);
+  lcd.print("L ");
   lcd.print(measureIn.light);
-  lcd.setCursor(6,2);
-  lcd.print("M");
-  lcd.setCursor(9,2);
+  lcd.print(" M ");
   lcd.print(measureIn.moved);
   lcd.setCursor(0,3);
   lcd.print("B lvl ");
-  lcd.setCursor(0,3);
-  lcd.print("Bat lvl ");
-  lcd.setCursor(8,3);
   if (measureIn.lobat == 0)
   lcd.print("Good");
   else
