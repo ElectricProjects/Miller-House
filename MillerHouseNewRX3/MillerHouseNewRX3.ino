@@ -139,13 +139,34 @@ byte smiley[8] = {
   B00000,
 };
 
+byte battery[8] = {
+  B00110,
+  B01111,
+  B01111,
+  B01111,
+  B01111,
+  B01111,
+  B01111,
+};
+
 byte in = 0;
 int times;
 int hstamp;
 int mstamp;
 byte out = 1;
-unsigned long interval = 5000;
+unsigned long interval = 15000;
 unsigned long previousMillis;
+
+unsigned long interval2 = 180000;
+unsigned long previousMillis2;
+unsigned long currentMillis2;
+
+unsigned long interval3 = 180000;
+unsigned long previousMillis3;
+unsigned long currentMillis3;
+
+int bat2 = 0;
+int bat3 = 0;
 static char cmd;
 int lastMinute;
 static byte value, stack[RF12_MAXDATA], top, sendLen, dest, quiet;
@@ -765,6 +786,7 @@ void setup() {
   activityLed(0);
   lcd.begin(20, 4);
   lcd.createChar(0, smiley);
+  lcd.createChar(1, battery);
   RTC.begin();
   DateTime now = RTC.now();
   //RTC.adjust(DateTime(__DATE__, __TIME__));
@@ -793,11 +815,30 @@ void loop() {
     lcd.print("0");
   lcd.print(now.minute());
 
-
-
   unsigned long currentMillis = millis();
+  currentMillis3 =millis();
+  currentMillis2 =millis();
+  
   if (Serial.available())
     handleInput(Serial.read());
+    
+      if (currentMillis-previousMillis >interval){
+      previousMillis=currentMillis;
+      if (out == 1){
+        homeScreenOut();
+        out=0;
+        delay(100);
+        }
+      
+      else {
+       
+        if (out == 0){
+          homeScreenIn();
+          out=1;
+        }
+      }
+      }
+    
 
   if (rf12_recvDone()) {
     activityLed(0);
@@ -811,11 +852,15 @@ void loop() {
       Serial.print("G ");
       Serial.print((int) rf12_grp);
     }
-    if(rf12_hdr == 33){
+    if(rf12_hdr == 33 || rf12_hdr == 1){
       measureOut= *(PayloadOut*) rf12_data;
+      previousMillis3 = currentMillis3;
+      bat3 = 0;
     }
-    if (rf12_hdr == 34){
+    if (rf12_hdr == 34 || rf12_hdr == 2){
       measureIn= *(PayloadIn*) rf12_data;
+      previousMillis2 = currentMillis2;
+      bat2 = 0;
     }
     Serial.print(' ');
     Serial.print((int) rf12_hdr);
@@ -823,19 +868,13 @@ void loop() {
       Serial.print(' ');
       Serial.print((int) rf12_data[i]);
     }
+    Serial.print("bat2 = ");
+    Serial.print(bat2);
+    Serial.print(" bat3 = ");
+    Serial.print(bat3);
     Serial.println(' ');
 
-    if (currentMillis-previousMillis >interval){
-      previousMillis=currentMillis;
-      if (out == 1){
-        out=0;
-        homeScreenOut();
-      }
-      else {
-        homeScreenIn();
-        out =1;
-      }
-    }
+  
     if (rf12_crc == 0) {
 
       if (df_present())
@@ -867,8 +906,12 @@ void loop() {
 
 void homeScreenOut()
 {
+  if (currentMillis3-previousMillis3 >interval3){
+          previousMillis3=currentMillis3;
+          bat3 = 1;
+  }
   lcd.clear();
-  lcd.print("Miller House Out");
+  lcd.print("Miller House Out ");
   lcd.setCursor(0,1);
   lcd.print("T");
   lcd.setCursor(2,1);
@@ -894,10 +937,12 @@ void homeScreenOut()
   lcd.setCursor(0,3);
   lcd.print("Bat lvl ");
   lcd.setCursor(8,3);
-  if (measureOut.lobat == 0)
+  if (measureOut.lobat == 0 && bat3 == 0)
   lcd.print("Good");
-  else
-  lcd.print("Bad");
+  else{
+  lcd.print("Bad ");
+    lcd.write(byte(1));
+  }
 
   if (measureOut.lobat >0 && times == 0) {
 
@@ -917,8 +962,12 @@ void homeScreenOut()
 
 void homeScreenIn()
 {
-  lcd.clear();
-  lcd.print(F("Miller House In"));
+   if (currentMillis2-previousMillis2 >interval2){
+          previousMillis2=currentMillis2;
+          bat2 = 1;
+        }
+    lcd.clear();
+  lcd.print(F("Miller House In "));
   lcd.setCursor(0,1);
   lcd.print("T ");
   DateTime now = RTC.now();
@@ -938,11 +987,13 @@ void homeScreenIn()
   lcd.print(" M ");
   lcd.print(measureIn.moved);
   lcd.setCursor(0,3);
-  lcd.print("B lvl ");
-  if (measureIn.lobat == 0)
+  lcd.print("Bat lvl ");
+  if (measureIn.lobat == 0 && bat2==0)
   lcd.print("Good");
-  else
-  lcd.print("Bad");
+  else{
+  lcd.print("Bad ");
+  lcd.write(byte(1));
+  }
 
   if (measureOut.lobat >0 && times == 0) {
     hstamp = now.hour();
