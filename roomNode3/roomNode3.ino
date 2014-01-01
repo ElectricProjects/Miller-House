@@ -17,7 +17,7 @@
 #define SERIAL  1   // set to 1 to also report readings on the serial port
 #define DEBUG   1   // set to 1 to display each loop() run and PIR trigger
 
-//#define ONE_WIRE_PIN  4   // PD4 - defined in a OneWire sensor is connected to port 1.
+#define ONE_WIRE_PIN  1   // PD4 - defined in a OneWire sensor is connected to port 1.
 //#define SHT11_PORT  1   // defined if SHT11 is connected to a port
 #define LDR_PORT    4   // defined if LDR is connected to a port's AIO pin
 #define PIR_PORT    4   // defined if PIR is connected to a port's DIO pin
@@ -170,7 +170,7 @@ static void doMeasure() {
         int humi = h + 0.5, temp = 10 * t + 0.5;
 #else
         //XXX TINY!
-        int humi = 50, temp = 25;
+        int humi = 50, temp = 21;
 #endif
         payload.humi = smoothedAverage(payload.humi, humi, firstTime);
         payload.temp = smoothedAverage(payload.temp, temp, firstTime);
