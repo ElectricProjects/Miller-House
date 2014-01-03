@@ -26,9 +26,9 @@ void setup() {
 
 tmp.mode2(INPUT);
 measureOut.temp = finalValue;
-measureOut.humi = 1;
-measureOut.wind = 1;
-measureOut.rain = 1;
+measureOut.humi = 0;
+measureOut.wind = 0;
+measureOut.rain = 0;
 measureOut.lobat = 0;
   rf12_initialize(1, RF12_433MHZ, 75);
   rf12_easyInit(15); // every 15 seconds send out pkg
@@ -46,9 +46,6 @@ value = tmp.anaRead();
   }
   if (readoutTimer.poll(1000)) {
     calcTemp();
-    measureOut.wind++;
-    if (measureOut.wind >=25)
-    measureOut.wind=1;
     measureOut.lobat=rf12_lowbat();
   }
   //byte sending = rf12_easySend( 0,measurement, sizeof measurement);
@@ -76,6 +73,8 @@ byte sending =  rf12_easySend(&measureOut, sizeof measureOut);
 void calcTemp(){
   for (int i=0; i <= 3; i++){
     value = value + tmp.anaRead();
+    Serial.print("value = ");
+    Serial.println(value);
     delay(2);
   }
 
