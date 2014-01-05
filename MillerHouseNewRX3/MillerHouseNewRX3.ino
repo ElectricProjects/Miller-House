@@ -986,6 +986,9 @@ void homeScreenIn()
   lcd.print(measureIn.light);
   lcd.print(" M ");
   lcd.print(measureIn.moved);
+  lcd.print(" H ");
+  lcd.print(measureIn.humi);
+  lcd.print(" %");
   lcd.setCursor(0,3);
   lcd.print("Bat lvl ");
   if (measureIn.lobat == 0 && bat2==0)
@@ -1007,4 +1010,7 @@ void homeScreenIn()
     lcd.print(mstamp);
   }
 }
+
+
+
 
