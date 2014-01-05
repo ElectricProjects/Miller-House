@@ -809,7 +809,12 @@ void loop() {
 
   lcd.setCursor(2,1);
   DateTime now = RTC.now();
+  if (now.hour() > 12){
+    lcd.print (now.hour()-12);
+  }
+  else
   lcd.print(now.hour());
+  
   lcd.print(':');
   if (now.minute()<10)
     lcd.print("0");
@@ -916,6 +921,10 @@ void homeScreenOut()
   lcd.print("T");
   lcd.setCursor(2,1);
     DateTime now = RTC.now();
+    if (now.hour() > 12){
+    lcd.print (now.hour()-12);
+  }
+  else
   lcd.print(now.hour());
   lcd.print(':');
   if (now.minute()<10)
@@ -944,7 +953,7 @@ void homeScreenOut()
     lcd.write(byte(1));
   }
 
-  if (measureOut.lobat >0 && times == 0) {
+  if (measureOut.lobat > 0 && times == 0) {
 
     hstamp = now.hour();
     mstamp=now.minute();
@@ -971,6 +980,10 @@ void homeScreenIn()
   lcd.setCursor(0,1);
   lcd.print("T ");
   DateTime now = RTC.now();
+  if (now.hour() > 12){
+    lcd.print (now.hour()-12);
+  }
+  else
   lcd.print(now.hour());
   lcd.print(':');
   if (now.minute()<10)
