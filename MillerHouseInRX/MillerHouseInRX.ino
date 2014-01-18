@@ -1,8 +1,10 @@
+// MillerHouseInRX 
 // Configure some values in EEPROM for easy config of the RF12 later on.
 // 2009-05-06 <jc@wippler.nl> http://opensource.org/licenses/mit-license.php
 //12/26/13 Todd Miller
-//Outside weather node using JeeNodes
-// MillerHouseNewRX
+// Inside weather receiver using JeeNodes & 20x4 LCD
+// MillerHouseInRX 
+// Used with MillerHouseOutTX, roomNodeSHT11, roomNodeTMP36 
 
 #include <JeeLib.h>
 #include <util/crc16.h>

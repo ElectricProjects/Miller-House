@@ -1,8 +1,12 @@
 
+// MillerHouseOutTX
 // http://jeelabs.net/
 //http://opensource.org/licenses/mit-license.php
 //12/27/13 Todd Miller
 //Outside weather node using JeeNodes TX
+// MillerHouseOutTX 
+// Used with MillerHouseInRX, roomNodeSHT11, roomNodeTMP36
+
 
 #include <JeeLib.h>
 #include <avr/sleep.h>

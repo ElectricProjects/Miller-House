@@ -1,3 +1,4 @@
+// roomNodeSHT11 
 // New version of the Room Node, derived from rooms.pde
 // 2010-10-19 <jc@wippler.nl> http://opensource.org/licenses/mit-license.php
 
@@ -7,7 +8,8 @@
 // The complexity in the code below comes from the fact that newly detected PIR
 // motion needs to be reported as soon as possible, but only once, while all the
 // other sensor values are being collected and averaged in a more regular cycle.
-// Added Dallas one wire
+// roomNodeSHT11
+// Used with MillerHouseInRX, MillerHouseOutTX, roomNodeTMP36
 
 #include <JeeLib.h>
 #include <PortsSHT11.h>
@@ -17,16 +19,15 @@
 #define SERIAL  1   // set to 1 to also report readings on the serial port
 #define DEBUG   1   // set to 1 to display each loop() run and PIR trigger
 
-#define ONE_WIRE_PIN  1   // PD4 - defined in a OneWire sensor is connected to port 1.
-//#define SHT11_PORT  1   // defined if SHT11 is connected to a port
-#define LDR_PORT    4   // defined if LDR is connected to a port's AIO pin
-#define PIR_PORT    4   // defined if PIR is connected to a port's DIO pin
+#define SHT11_PORT  2   // defined if SHT11 is connected to a port
+#define LDR_PORT    3   // defined if LDR is connected to a port's AIO pin
+#define PIR_PORT    3   // defined if PIR is connected to a port's DIO pin
 
 #define MEASURE_PERIOD  50 // how often to measure, in tenths of seconds
 #define RETRY_PERIOD    10  // how soon to retry if ACK didn't come in
 #define RETRY_LIMIT     3   // maximum number of times to retry
 #define ACK_TIME        10  // number of milliseconds to wait for an ack
-#define REPORT_EVERY    2   // report every N measurement cycles
+#define REPORT_EVERY    3   // report every N measurement cycles
 #define SMOOTH          3   // smoothing factor used for running averages
 
 // set the sync mode to 2 if the fuses are still the Arduino default
@@ -55,18 +56,12 @@ struct {
     byte lobat :1;  // supply voltage dropped under 3.1V: 0..1
 } payload;
 
+int value;
+int temp;
+int humi;
+Port tmp (4);
+float finalValue;
 // Conditional code, depending on which sensors are connected and how:
-#if ONE_WIRE_PIN
-#define TEMPERATURE_PRECISION 12
-
-#include <OneWire.h>
-#include <DallasTemperature.h>
-// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-OneWire oneWire(ONE_WIRE_PIN);
-// Pass our oneWire reference to Dallas Temperature. 
-DallasTemperature sensors(&oneWire);
-DeviceAddress deviceAddress;
-#endif
 
 #if SHT11_PORT
     SHT11 sht11 (SHT11_PORT);
@@ -167,10 +162,15 @@ static void doMeasure() {
         sht11.measure(SHT11::TEMP, shtDelay);
         float h, t;
         sht11.calculate(h, t);
-        int humi = h + 0.5, temp = 10 * t + 0.5;
+         humi = h + 0.5;
+         temp = 10 * t + 0.5;
+         temp=temp/10;
+         float temperatureF = (temp * 9.0 / 5.0) + 32.0;
+         //payload.temp = temperatureF;
+         temp = temperatureF;
 #else
         //XXX TINY!
-        int humi = 50, temp = 21;
+        int humi = 50, temp = 25;
 #endif
         payload.humi = smoothedAverage(payload.humi, humi, firstTime);
         payload.temp = smoothedAverage(payload.temp, temp, firstTime);
@@ -184,10 +184,6 @@ static void doMeasure() {
     #if PIR_PORT
         payload.moved = pir.state();
     #endif
-    #if ONE_WIRE_PIN
-      sensors.requestTemperatures();
-      payload.temp = sensors.getTempF(deviceAddress) * 10;
-    #endif
 }
 
 static void serialFlush () {
@@ -199,6 +195,8 @@ static void serialFlush () {
 
 // periodic report, i.e. send out a packet and optionally report on serial port
 static void doReport() {
+   // calcTemp();
+  //  payload.temp=finalValue;
     rf12_sleep(RF12_WAKEUP);
     while (!rf12_canSend())
         rf12_recvDone();
@@ -207,14 +205,15 @@ static void doReport() {
 
     #if SERIAL
         Serial.print("ROOM ");
+        Serial.print("L ");
         Serial.print((int) payload.light);
-        Serial.print(' ');
+        Serial.print(" M ");
         Serial.print((int) payload.moved);
-        Serial.print(' ');
+        Serial.print(" H ");
         Serial.print((int) payload.humi);
-        Serial.print(' ');
+        Serial.print(" T ");
         Serial.print((int) payload.temp);
-        Serial.print(' ');
+        Serial.print(" Bat ");
         Serial.print((int) payload.lobat);
         Serial.println();
         serialFlush();
@@ -286,24 +285,6 @@ void setup () {
 #endif
     #endif
 
-#if ONE_WIRE_PIN
-  sensors.begin();
-  #if SERIAL || DEBUG
-  Serial.print("Locating OneWire devices...");
-  Serial.print("Found ");
-  Serial.print(sensors.getDeviceCount(), DEC);
-  Serial.println(" devices.");
-  #endif
-  
-  if (sensors.getAddress(deviceAddress, 0)) {
-      sensors.setResolution(deviceAddress, TEMPERATURE_PRECISION);
-  } else {
-  #if SERIAL || DEBUG    
-    Serial.println("Unable to find address for Device 0");
-  #endif
-  }
-#endif
-
     reportCount = REPORT_EVERY;     // report right away for easy debugging
     scheduler.timer(MEASURE, 0);    // start the measurement loop going
 }
@@ -341,3 +322,4 @@ void loop () {
             break;
     }
 }
+
