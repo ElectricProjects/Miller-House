@@ -131,6 +131,16 @@ typedef struct {
 PayloadIn;
 PayloadIn measureIn;
 
+typedef struct {
+  byte light;
+  byte moved :1;
+  byte humi :7;
+  int  temp :10;
+  byte lobat :1;
+}
+PayloadIn2;
+PayloadIn2 measureIn2;
+
 byte smiley[8] = {
   B00111,
   B00101,
@@ -159,6 +169,10 @@ byte out = 1;
 unsigned long interval = 15000;
 unsigned long previousMillis;
 
+unsigned long interval1 = 180000;
+unsigned long previousMillis1;
+unsigned long currentMillis1;
+
 unsigned long interval2 = 180000;
 unsigned long previousMillis2;
 unsigned long currentMillis2;
@@ -167,8 +181,13 @@ unsigned long interval3 = 180000;
 unsigned long previousMillis3;
 unsigned long currentMillis3;
 
+int bat1 = 0;
 int bat2 = 0;
 int bat3 = 0;
+
+int tmpLow = 0;
+int tmpHigh = 0;
+byte tmp=0;
 static char cmd;
 int lastMinute;
 static byte value, stack[RF12_MAXDATA], top, sendLen, dest, quiet;
@@ -519,12 +538,6 @@ static void df_initialize () {
     df_deselect();
 
     scanForLastSave();
-
-   /* Serial.print("DF I ");
-    Serial.print(dfLastPage);
-    Serial.print(' ');
-    Serial.println(dfBuf.seqnum);*/
-
     // df_wipe();
     df_saveBuf(); //XXX
   }
@@ -550,14 +563,6 @@ static void df_dump () {
     df_read(page, sizeof dfBuf.data, &curr, sizeof curr);
     if (curr.seqnum == 0xFFFF)
       continue; // page never written to
-   /* Serial.print(" df# ");
-    Serial.print(page);
-    Serial.print(" : ");
-    Serial.print(curr.seqnum);
-    Serial.print(' ');
-    Serial.print(curr.timestamp);
-    Serial.print(' ');
-    Serial.println(curr.crc);*/
   }
 }
 
@@ -587,10 +592,7 @@ static word scanForMarker (word seqnum, long asof) {
 
 static void df_replay (word seqnum, long asof) {
   word page = scanForMarker(seqnum, asof);
-  /*Serial.print("r: page ");
-  Serial.print(page);
-  Serial.print(' ');
-  Serial.println(dfLastPage);*/
+
   discardInput();
   word savedSeqnum = dfBuf.seqnum;
   while (page != dfLastPage) {
@@ -605,10 +607,6 @@ static void df_replay (word seqnum, long asof) {
     for (word i = 0; i < sizeof dfBuf; ++i)
       crc = _crc16_update(crc, dfBuf.data[i]);
     if (crc != 0) {
-    /*  Serial.print("DF C? ");
-      Serial.print(page);
-      Serial.print(' ');
-      Serial.println(crc);*/
       continue;
     }
     // report each entry as "R seqnum time <data...>"
@@ -616,12 +614,6 @@ static void df_replay (word seqnum, long asof) {
     while (i < sizeof dfBuf.data && dfBuf.data[i] < 255) {
       if (Serial.available())
         break;
-    /*  Serial.print("R ");
-      Serial.print(dfBuf.seqnum);
-      Serial.print(' ');
-      Serial.print(dfBuf.timestamp + dfBuf.data[i++]);
-      Serial.print(' ');
-      Serial.print((int) dfBuf.data[i++]);*/
       byte n = dfBuf.data[i++];
       while (n-- > 0) {
         Serial.print(' ');
@@ -629,22 +621,11 @@ static void df_replay (word seqnum, long asof) {
       }
       Serial.println();
     }
-    // at end of each page, report a "DF R" marker, to allow re-starting
-    /*Serial.print("DF R ");
-    Serial.print(page);
-    Serial.print(' ');
-    Serial.print(dfBuf.seqnum);
-    Serial.print(' ');
-    Serial.println(dfBuf.timestamp);*/
+  
   }
   dfFill = 0; // ram buffer is no longer valid
   dfBuf.seqnum = savedSeqnum + 1; // so next replay will start at a new value
-  /*Serial.print("DF E ");
-  Serial.print(dfLastPage);
-  Serial.print(' ');
-  Serial.print(dfBuf.seqnum);
-  Serial.print(' ');
-  Serial.println(millis());*/
+
 }
 
 #else // DATAFLASH
@@ -821,10 +802,12 @@ void loop() {
   if (now.minute()<10)
     lcd.print("0");
   lcd.print(now.minute());
+  
 
   unsigned long currentMillis = millis();
   currentMillis3 =millis();
   currentMillis2 =millis();
+  currentMillis1 =millis();
   
   if (Serial.available())
     handleInput(Serial.read());
@@ -841,12 +824,18 @@ void loop() {
        
         if (out == 0){
           homeScreenIn();
+          out=2;
+        }
+         else {
+       
+        if (out == 2){
+          homeScreenIn2();
           out=1;
         }
       }
-      }
-    
-
+     }
+    }
+   
   if (rf12_recvDone()) {
     activityLed(0);
 
@@ -866,22 +855,29 @@ void loop() {
     }
     if (rf12_hdr == 34 || rf12_hdr == 2){
       measureIn= *(PayloadIn*) rf12_data;
-      previousMillis2 = currentMillis2;
+      previousMillis2 = currentMillis1;
       bat2 = 0;
     }
-    Serial.print(' ');
-    Serial.print((int) rf12_hdr);
-    for (byte i = 0; i < n; ++i) {
-      Serial.print(' ');
-      Serial.print((int) rf12_data[i]);
-    }
-    Serial.print("bat2 = ");
-    Serial.print(bat2);
-    Serial.print(" bat3 = ");
-    Serial.print(bat3);
-    Serial.println(' ');
+    
+    if(rf12_hdr == 35 || rf12_hdr == 3){
+      measureIn2= *(PayloadIn2*) rf12_data;
+      previousMillis1 = currentMillis3;
+      bat1 = 0;
+      if (tmp==0)
+    {
+      tmpLow=measureIn2.temp;
+      tmpHigh=measureIn2.temp;
+      tmp=1;
 
-  
+    }
+      if(measureIn2.temp <tmpLow)
+      tmpLow=measureIn2.temp;
+
+    if(measureIn2.temp >tmpHigh)
+      tmpHigh=measureIn2.temp;
+
+    }
+
     if (rf12_crc == 0) {
 
       if (df_present())
@@ -891,10 +887,8 @@ void loop() {
         Serial.println(" -> ack");
         rf12_sendStart(RF12_ACK_REPLY, 0, 0);
       }
-
-
     }
-    activityLed(1);
+  activityLed(1);
 
   }
 
@@ -918,7 +912,7 @@ void homeScreenOut()
           bat3 = 1;
   }
   lcd.clear();
-  lcd.print("Miller House Out ");
+  lcd.print(F("Miller House Out "));
   lcd.setCursor(0,1);
   lcd.print("T");
   lcd.setCursor(2,1);
@@ -1026,6 +1020,60 @@ void homeScreenIn()
   }
 }
 
+void homeScreenIn2()
+{
+   if (currentMillis1-previousMillis1 >interval1){
+          previousMillis1=currentMillis1;
+          bat1 = 1;
+        }
+    lcd.clear();
+  lcd.print(F("Miller House In 2"));
+  lcd.setCursor(0,1);
+  lcd.print("T ");
+  DateTime now = RTC.now();
+  if (now.hour() > 12){
+    lcd.print (now.hour()-12);
+  }
+  else
+  lcd.print(now.hour());
+  lcd.print(':');
+  if (now.minute()<10)
+    lcd.print("0");
+  lcd.print(now.minute());
+  lcd.setCursor(8,1);
+  lcd.print("T ");
+  lcd.print(measureIn2.temp);
+  lcd.write(byte(0));
+  lcd.print(" F");
+  lcd.setCursor(0,2);
+  lcd.print("L ");
+  lcd.print(measureIn2.light);
+  lcd.print(" M ");
+  lcd.print(measureIn2.moved);
+  lcd.print(" H ");
+  lcd.print(tmpHigh);
+  lcd.print(" L ");
+  lcd.print(tmpLow);
+  lcd.setCursor(0,3);
+  lcd.print("Bat lvl ");
+  if (measureIn2.lobat == 0 && bat2==0)
+  lcd.print("Good");
+  else{
+  lcd.print("Bad ");
+  lcd.write(byte(1));
+  }
 
+  if (measureIn2.lobat >0 && times == 0) {
+    hstamp = now.hour();
+    mstamp=now.minute();
+    times=1;
+    lcd.setCursor(13,3);
+    lcd.print(hstamp);
+    lcd.print(':');
+    if (mstamp < 10)
+      lcd.print("0");
+    lcd.print(mstamp);
+  }
+}
 
 
