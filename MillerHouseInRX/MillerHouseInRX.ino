@@ -187,6 +187,7 @@ int bat3 = 0;
 
 int tmpLow = 0;
 int tmpHigh = 0;
+int prevTemp =0;
 byte tmp=0;
 static char cmd;
 int lastMinute;
@@ -854,10 +855,15 @@ void loop() {
       bat3 = 0;
     }
     if (rf12_hdr == 34 || rf12_hdr == 2){
+     
       measureIn= *(PayloadIn*) rf12_data;
       previousMillis2 = currentMillis1;
       bat2 = 0;
-    }
+      if (prevTemp - measureIn2.temp < 5 || measureIn2.temp -prevTemp < 5) {
+        prevTemp = measureIn2.temp; }
+        else
+        measureIn2.temp = prevTemp;    
+      }
     
     if(rf12_hdr == 35 || rf12_hdr == 3){
       measureIn2= *(PayloadIn2*) rf12_data;
