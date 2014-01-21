@@ -15,6 +15,7 @@
 #include <Wire.h>
 #include <RTClib.h>
 
+
 // RTC based on the DS1307 chip connected via the Ports library
 class RTC_Plug :
 public DeviceI2C {
@@ -141,7 +142,7 @@ typedef struct {
 PayloadIn2;
 PayloadIn2 measureIn2;
 
-byte smiley[8] = {
+byte degree[8] = {
   B00111,
   B00101,
   B00101,
@@ -166,7 +167,7 @@ int times;
 int hstamp;
 int mstamp;
 byte out = 1;
-unsigned long interval = 15000;
+long interval = 15000;
 unsigned long previousMillis;
 
 unsigned long interval1 = 180000;
@@ -181,16 +182,17 @@ unsigned long interval3 = 180000;
 unsigned long previousMillis3;
 unsigned long currentMillis3;
 
-int bat1 = 0;
-int bat2 = 0;
-int bat3 = 0;
+byte bat1 = 0;
+byte bat2 = 0;
+byte bat3 = 0;
 
 int tmpLow = 0;
 int tmpHigh = 0;
-int prevTemp =0;
+//int prevTemp =0;
 byte tmp=0;
 static char cmd;
 int lastMinute;
+
 static byte value, stack[RF12_MAXDATA], top, sendLen, dest, quiet;
 static byte testbuf[RF12_MAXDATA], testCounter;
 
@@ -769,7 +771,7 @@ void setup() {
   Serial.print("\n[RF12demo.8]");
   activityLed(0);
   lcd.begin(20, 4);
-  lcd.createChar(0, smiley);
+  lcd.createChar(0, degree);
   lcd.createChar(1, battery);
   RTC.begin();
   DateTime now = RTC.now();
@@ -790,7 +792,6 @@ void setup() {
 }
 
 void loop() {
-
   lcd.setCursor(2,1);
   DateTime now = RTC.now();
   if (now.hour() > 12){
@@ -842,7 +843,7 @@ void loop() {
 
     byte n = rf12_len;
     if (rf12_crc == 0) {
-      Serial.print("OK");
+      Serial.print(F("OK "));
       pkg++;
     }
     if (config.group == 0) {
@@ -858,11 +859,7 @@ void loop() {
      
       measureIn= *(PayloadIn*) rf12_data;
       previousMillis2 = currentMillis1;
-      bat2 = 0;
-      if (prevTemp - measureIn2.temp < 5 || measureIn2.temp -prevTemp < 5) {
-        prevTemp = measureIn2.temp; }
-        else
-        measureIn2.temp = prevTemp;    
+      bat2 = 0;   
       }
     
     if(rf12_hdr == 35 || rf12_hdr == 3){
@@ -876,11 +873,19 @@ void loop() {
       tmp=1;
 
     }
-      if(measureIn2.temp <tmpLow)
+      if(measureIn2.temp <tmpLow && tmpLow-measureIn2.temp < 5)
       tmpLow=measureIn2.temp;
 
-    if(measureIn2.temp >tmpHigh)
+    if(measureIn2.temp >tmpHigh && measureIn2.temp - tmpHigh < 5)
       tmpHigh=measureIn2.temp;
+      
+      Serial.print (F("Temp = "));
+      Serial.print (measureIn2.temp);
+      Serial.print (F(" H = "));
+      Serial.print (tmpHigh);
+      Serial.print(F(" L "));
+      Serial.println(tmpLow);
+      
 
     }
 
@@ -920,7 +925,7 @@ void homeScreenOut()
   lcd.clear();
   lcd.print(F("Miller House Out "));
   lcd.setCursor(0,1);
-  lcd.print("T");
+  lcd.print(F("T"));
   lcd.setCursor(2,1);
     DateTime now = RTC.now();
     if (now.hour() > 12){
@@ -930,28 +935,28 @@ void homeScreenOut()
   lcd.print(now.hour());
   lcd.print(':');
   if (now.minute()<10)
-    lcd.print("0");
+    lcd.print(F("0"));
   lcd.print(now.minute());
   lcd.setCursor(8,1);
-  lcd.print("T ");
+  lcd.print(F("T "));
   lcd.print(measureOut.temp);
   lcd.write(byte(0));
-  lcd.print(" F");
+  lcd.print(F(" F"));
   lcd.setCursor(0,2);
-  lcd.print("W");
+  lcd.print(F("W"));
   lcd.setCursor(2,2);
   lcd.print(measureOut.wind);
-  lcd.print(" mph ");
+  lcd.print(F(" mph "));
   lcd.print("R ");
   lcd.print(measureOut.rain);
-  lcd.print(" in");
+  lcd.print(F(" in"));
   lcd.setCursor(0,3);
-  lcd.print("Bat lvl ");
+  lcd.print(F("Bat lvl "));
   lcd.setCursor(8,3);
   if (measureOut.lobat == 0 && bat3 == 0)
-  lcd.print("Good");
+  lcd.print(F("Good"));
   else{
-  lcd.print("Bad ");
+  lcd.print(F("Bad "));
     lcd.write(byte(1));
   }
 
@@ -980,7 +985,7 @@ void homeScreenIn()
     lcd.clear();
   lcd.print(F("Miller House In "));
   lcd.setCursor(0,1);
-  lcd.print("T ");
+  lcd.print(F("T "));
   DateTime now = RTC.now();
   if (now.hour() > 12){
     lcd.print (now.hour()-12);
@@ -989,27 +994,27 @@ void homeScreenIn()
   lcd.print(now.hour());
   lcd.print(':');
   if (now.minute()<10)
-    lcd.print("0");
+    lcd.print(F("0"));
   lcd.print(now.minute());
   lcd.setCursor(8,1);
-  lcd.print("T ");
+  lcd.print(F("T "));
   lcd.print(measureIn.temp);
   lcd.write(byte(0));
-  lcd.print(" F");
+  lcd.print(F(" F"));
   lcd.setCursor(0,2);
-  lcd.print("L ");
+  lcd.print(F("L "));
   lcd.print(measureIn.light);
-  lcd.print(" M ");
+  lcd.print(F(" M "));
   lcd.print(measureIn.moved);
-  lcd.print(" H ");
+  lcd.print(F(" H "));
   lcd.print(measureIn.humi);
-  lcd.print(" %");
+  lcd.print(F(" %"));
   lcd.setCursor(0,3);
-  lcd.print("Bat lvl ");
+  lcd.print(F("Bat lvl "));
   if (measureIn.lobat == 0 && bat2==0)
-  lcd.print("Good");
+  lcd.print(F("Good"));
   else{
-  lcd.print("Bad ");
+  lcd.print(F("Bad "));
   lcd.write(byte(1));
   }
 
@@ -1035,7 +1040,7 @@ void homeScreenIn2()
     lcd.clear();
   lcd.print(F("Miller House In 2"));
   lcd.setCursor(0,1);
-  lcd.print("T ");
+  lcd.print(F("T "));
   DateTime now = RTC.now();
   if (now.hour() > 12){
     lcd.print (now.hour()-12);
@@ -1044,28 +1049,28 @@ void homeScreenIn2()
   lcd.print(now.hour());
   lcd.print(':');
   if (now.minute()<10)
-    lcd.print("0");
+    lcd.print(F("0"));
   lcd.print(now.minute());
   lcd.setCursor(8,1);
-  lcd.print("T ");
+  lcd.print(F("T "));
   lcd.print(measureIn2.temp);
   lcd.write(byte(0));
-  lcd.print(" F");
+  lcd.print(F(" F"));
   lcd.setCursor(0,2);
-  lcd.print("L ");
+  lcd.print(F("L "));
   lcd.print(measureIn2.light);
-  lcd.print(" M ");
+  lcd.print(F(" M "));
   lcd.print(measureIn2.moved);
-  lcd.print(" H ");
+  lcd.print(F(" H "));
   lcd.print(tmpHigh);
-  lcd.print(" L ");
+  lcd.print(F(" L "));
   lcd.print(tmpLow);
   lcd.setCursor(0,3);
-  lcd.print("Bat lvl ");
+  lcd.print(F("Bat lvl "));
   if (measureIn2.lobat == 0 && bat2==0)
-  lcd.print("Good");
+  lcd.print(F("Good"));
   else{
-  lcd.print("Bad ");
+  lcd.print(F("Bad "));
   lcd.write(byte(1));
   }
 
