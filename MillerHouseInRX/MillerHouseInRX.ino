@@ -188,8 +188,11 @@ byte bat3 = 0;
 
 int tmpLow = 0;
 int tmpHigh = 0;
+int tmpOutLow = 0;
+int tmpOutHigh = 0;
 //int prevTemp =0;
 byte tmp=0;
+byte tmp2=0;
 static char cmd;
 int lastMinute;
 
@@ -664,7 +667,7 @@ static void handleInput (char c) {
     value = 0;
   }
   else if ('a' <= c && c <='z') {
-    Serial.print("> ");
+    Serial.print(F("> "));
     Serial.print((int) value);
     Serial.println(c);
     switch (c) {
@@ -804,8 +807,7 @@ void loop() {
   if (now.minute()<10)
     lcd.print("0");
   lcd.print(now.minute());
-  
-
+ 
   unsigned long currentMillis = millis();
   currentMillis3 =millis();
   currentMillis2 =millis();
@@ -847,13 +849,25 @@ void loop() {
       pkg++;
     }
     if (config.group == 0) {
-      Serial.print("G ");
+      Serial.print(F("G "));
       Serial.print((int) rf12_grp);
     }
     if(rf12_hdr == 33 || rf12_hdr == 1){
       measureOut= *(PayloadOut*) rf12_data;
       previousMillis3 = currentMillis3;
       bat3 = 0;
+      if (tmp2==0)
+    {
+      tmpOutLow=measureOut.temp;
+      tmpOutHigh=measureOut.temp;
+      tmp2=1;
+
+    }
+      if(measureOut.temp <tmpOutLow && tmpOutLow-measureOut.temp < 5)
+      tmpOutLow=measureIn2.temp;
+
+    if(measureOut.temp >tmpOutHigh && measureOut.temp - tmpOutHigh < 5)
+      tmpOutHigh=measureOut.temp;
     }
     if (rf12_hdr == 34 || rf12_hdr == 2){
      
@@ -878,15 +892,6 @@ void loop() {
 
     if(measureIn2.temp >tmpHigh && measureIn2.temp - tmpHigh < 5)
       tmpHigh=measureIn2.temp;
-      
-      Serial.print (F("Temp = "));
-      Serial.print (measureIn2.temp);
-      Serial.print (F(" H = "));
-      Serial.print (tmpHigh);
-      Serial.print(F(" L "));
-      Serial.println(tmpLow);
-      
-
     }
 
     if (rf12_crc == 0) {
@@ -904,9 +909,9 @@ void loop() {
   }
 
   if (cmd && rf12_canSend()) {
-    Serial.print(" -> ");
+    Serial.print(F(" -> "));
     Serial.print((int) sendLen);
-    Serial.println(" b");
+    Serial.println(F(" b"));
     byte header = cmd == 'a' ? RF12_HDR_ACK : 0;
     if (dest)
       header |= RF12_HDR_DST | dest;
@@ -924,21 +929,7 @@ void homeScreenOut()
   }
   lcd.clear();
   lcd.print(F("Miller House Out "));
-  lcd.setCursor(0,1);
-  lcd.print(F("T"));
-  lcd.setCursor(2,1);
-    DateTime now = RTC.now();
-    if (now.hour() > 12){
-    lcd.print (now.hour()-12);
-  }
-  else
-  lcd.print(now.hour());
-  lcd.print(':');
-  if (now.minute()<10)
-    lcd.print(F("0"));
-  lcd.print(now.minute());
-  lcd.setCursor(8,1);
-  lcd.print(F("T "));
+  screenBasics();
   lcd.print(measureOut.temp);
   lcd.write(byte(0));
   lcd.print(F(" F"));
@@ -946,31 +937,18 @@ void homeScreenOut()
   lcd.print(F("W"));
   lcd.setCursor(2,2);
   lcd.print(measureOut.wind);
-  lcd.print(F(" mph "));
-  lcd.print("R ");
+  lcd.print(F(" R "));
   lcd.print(measureOut.rain);
-  lcd.print(F(" in"));
+  lcd.print(F(" H "));
+  lcd.print(tmpOutHigh);
+  lcd.print(F(" L "));
+  lcd.print(tmpOutLow);
   lcd.setCursor(0,3);
-  lcd.print(F("Bat lvl "));
-  lcd.setCursor(8,3);
+  lcd.print(F("Bat "));
   if (measureOut.lobat == 0 && bat3 == 0)
   lcd.print(F("Good"));
   else{
-  lcd.print(F("Bad "));
-    lcd.write(byte(1));
-  }
-
-  if (measureOut.lobat > 0 && times == 0) {
-
-    hstamp = now.hour();
-    mstamp=now.minute();
-    times=1;
-    lcd.setCursor(13,3);
-    lcd.print(hstamp);
-    lcd.print(':');
-    if (mstamp < 10)
-      lcd.print("0");
-    lcd.print(mstamp);
+ badBat();
   }
 }
 
@@ -984,20 +962,7 @@ void homeScreenIn()
         }
     lcd.clear();
   lcd.print(F("Miller House In "));
-  lcd.setCursor(0,1);
-  lcd.print(F("T "));
-  DateTime now = RTC.now();
-  if (now.hour() > 12){
-    lcd.print (now.hour()-12);
-  }
-  else
-  lcd.print(now.hour());
-  lcd.print(':');
-  if (now.minute()<10)
-    lcd.print(F("0"));
-  lcd.print(now.minute());
-  lcd.setCursor(8,1);
-  lcd.print(F("T "));
+  screenBasics();
   lcd.print(measureIn.temp);
   lcd.write(byte(0));
   lcd.print(F(" F"));
@@ -1010,24 +975,11 @@ void homeScreenIn()
   lcd.print(measureIn.humi);
   lcd.print(F(" %"));
   lcd.setCursor(0,3);
-  lcd.print(F("Bat lvl "));
+  lcd.print(F("Bat "));
   if (measureIn.lobat == 0 && bat2==0)
   lcd.print(F("Good"));
   else{
-  lcd.print(F("Bad "));
-  lcd.write(byte(1));
-  }
-
-  if (measureOut.lobat >0 && times == 0) {
-    hstamp = now.hour();
-    mstamp=now.minute();
-    times=1;
-    lcd.setCursor(13,3);
-    lcd.print(hstamp);
-    lcd.print(':');
-    if (mstamp < 10)
-      lcd.print("0");
-    lcd.print(mstamp);
+ badBat();
   }
 }
 
@@ -1039,20 +991,7 @@ void homeScreenIn2()
         }
     lcd.clear();
   lcd.print(F("Miller House In 2"));
-  lcd.setCursor(0,1);
-  lcd.print(F("T "));
-  DateTime now = RTC.now();
-  if (now.hour() > 12){
-    lcd.print (now.hour()-12);
-  }
-  else
-  lcd.print(now.hour());
-  lcd.print(':');
-  if (now.minute()<10)
-    lcd.print(F("0"));
-  lcd.print(now.minute());
-  lcd.setCursor(8,1);
-  lcd.print(F("T "));
+  screenBasics();
   lcd.print(measureIn2.temp);
   lcd.write(byte(0));
   lcd.print(F(" F"));
@@ -1066,25 +1005,47 @@ void homeScreenIn2()
   lcd.print(F(" L "));
   lcd.print(tmpLow);
   lcd.setCursor(0,3);
-  lcd.print(F("Bat lvl "));
+  lcd.print(F("Bat "));
   if (measureIn2.lobat == 0 && bat2==0)
   lcd.print(F("Good"));
   else{
-  lcd.print(F("Bad "));
-  lcd.write(byte(1));
-  }
+        badBat();
+      }
+}
 
-  if (measureIn2.lobat >0 && times == 0) {
+void screenBasics(){
+  lcd.setCursor(0,1);
+  lcd.print(F("T "));
+  DateTime now = RTC.now();
+  if (now.hour() > 12){
+    lcd.print (now.hour()-12);
+  }
+  else
+  lcd.print(now.hour());
+  lcd.print(':');
+  if (now.minute()<10)
+    lcd.print(F("0"));
+  lcd.print(now.minute());
+  lcd.setCursor(8,1);
+  lcd.print(F("T "));
+}
+
+void badBat(){
+    DateTime now = RTC.now();
+    lcd.print(F("Bad"));
+    lcd.write(byte(1));
     hstamp = now.hour();
+    if (now.hour() > 12)
+    hstamp = now.hour()-12;  
+  else
+    hstamp = now.hour();
+    
     mstamp=now.minute();
-    times=1;
-    lcd.setCursor(13,3);
+    lcd.setCursor(10,3);
+    lcd.print(F("          "));
     lcd.print(hstamp);
     lcd.print(':');
     if (mstamp < 10)
-      lcd.print("0");
+      lcd.print(F("0"));
     lcd.print(mstamp);
-  }
 }
-
-
