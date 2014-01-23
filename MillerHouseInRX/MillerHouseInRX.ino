@@ -194,7 +194,6 @@ int tmpOutHigh = 0;
 byte tmp=0;
 byte tmp2=0;
 static char cmd;
-int lastMinute;
 
 static byte value, stack[RF12_MAXDATA], top, sendLen, dest, quiet;
 static byte testbuf[RF12_MAXDATA], testCounter;
@@ -243,7 +242,7 @@ static void saveConfig () {
   }
 
   if (!rf12_config())
-    Serial.println("config save failed");
+    Serial.println(F("config save failed"));
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -478,7 +477,7 @@ static void df_saveBuf () {
 
   // wait for write to finish before reporting page, seqnum, and time stamp
   df_flush();
-  Serial.print("DF S ");
+  Serial.print(F("DF S "));
   Serial.print(dfLastPage);
   Serial.print(' ');
   Serial.print(dfBuf.seqnum);
@@ -771,7 +770,7 @@ static void handleInput (char c) {
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
-  Serial.print("\n[RF12demo.8]");
+  Serial.print(F("\n[RF12demo.8]"));
   activityLed(0);
   lcd.begin(20, 4);
   lcd.createChar(0, degree);
@@ -864,7 +863,7 @@ void loop() {
 
     }
       if(measureOut.temp <tmpOutLow && tmpOutLow-measureOut.temp < 5)
-      tmpOutLow=measureIn2.temp;
+      tmpOutLow=measureOut.temp;
 
     if(measureOut.temp >tmpOutHigh && measureOut.temp - tmpOutHigh < 5)
       tmpOutHigh=measureOut.temp;
