@@ -166,6 +166,8 @@ byte in = 0;
 int times;
 int hstamp;
 int mstamp;
+int dstamp;
+int mostamp;
 byte out = 1;
 long interval = 15000;
 unsigned long previousMillis;
@@ -194,6 +196,7 @@ int tmpOutHigh = 0;
 byte tmp=0;
 byte tmp2=0;
 static char cmd;
+byte x=0;
 
 static byte value, stack[RF12_MAXDATA], top, sendLen, dest, quiet;
 static byte testbuf[RF12_MAXDATA], testCounter;
@@ -1030,21 +1033,38 @@ void screenBasics(){
 }
 
 void badBat(){
-    DateTime now = RTC.now();
     lcd.print(F("Bad"));
     lcd.write(byte(1));
-    hstamp = now.hour();
-    if (now.hour() > 12)
-    hstamp = now.hour()-12;  
-  else
-    hstamp = now.hour();
-    
-    mstamp=now.minute();
+    if (x==0)
+    {
+     DateTime now = RTC.now(); 
+     mstamp=now.minute();  
+     mostamp=now.month();
+     dstamp= now.day();
+     
+     if (now.hour() > 12)
+     hstamp = now.hour()-12;  
+     else
+     hstamp = now.hour();  
+     x=1;
+     Serial.print (hstamp);
+     Serial.print (" : ");
+     Serial.println (mstamp);
+     
+    }
     lcd.setCursor(10,3);
     lcd.print(F("          "));
+    lcd.setCursor(10,3);
+    lcd.print(mostamp);
+    lcd.print('/');
+    lcd.print(dstamp);
+    lcd.print(F(" "));
     lcd.print(hstamp);
     lcd.print(':');
     if (mstamp < 10)
       lcd.print(F("0"));
     lcd.print(mstamp);
+    Serial.print (hstamp);
+     Serial.print (" : ");
+     Serial.println (mstamp);
 }
