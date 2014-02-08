@@ -152,13 +152,14 @@ byte degree[8] = {
   B00000,
 };
 
+
 byte battery[8] = {
   B00110,
-  B01111,
-  B01111,
-  B01111,
-  B01111,
-  B01111,
+  B01001,
+  B01001,
+  B01001,
+  B01001,
+  B01001,
   B01111,
 };
 
@@ -169,7 +170,7 @@ int mstamp;
 int dstamp;
 int mostamp;
 byte out = 1;
-long interval = 15000;
+long interval = 15000; // time betweeen screens
 unsigned long previousMillis;
 
 unsigned long interval1 = 180000;
@@ -1041,7 +1042,6 @@ void badBat(){
      mstamp=now.minute();  
      mostamp=now.month();
      dstamp= now.day();
-     
      if (now.hour() > 12)
      hstamp = now.hour()-12;  
      else
@@ -1049,6 +1049,9 @@ void badBat(){
      x=1;
      Serial.print (hstamp);
      Serial.print (" : ");
+     if (now.minute()<10)
+    lcd.print(F("0"));
+    lcd.print(now.minute());
      Serial.println (mstamp);
      
     }
