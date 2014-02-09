@@ -94,6 +94,7 @@ static void activityLed (byte on) {
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, !on);
+  delay(20);
 #endif
 }
 
@@ -163,12 +164,21 @@ byte battery[8] = {
   B01111,
 };
 
-byte in = 0;
-int times;
-int hstamp;
-int mstamp;
-int dstamp;
-int mostamp;
+byte hstamp;
+byte mstamp;
+byte dstamp;
+byte mostamp;
+
+byte hstamp1;
+byte mstamp1;
+byte dstamp1;
+byte mostamp1;
+
+byte hstamp2;
+byte mstamp2;
+byte dstamp2;
+byte mostamp2;
+
 byte out = 1;
 long interval = 15000; // time betweeen screens
 unsigned long previousMillis;
@@ -197,7 +207,9 @@ int tmpOutHigh = 0;
 byte tmp=0;
 byte tmp2=0;
 static char cmd;
-byte x=0;
+byte x = 0;
+byte x1 = 0;
+byte x2 = 0;
 
 static byte value, stack[RF12_MAXDATA], top, sendLen, dest, quiet;
 static byte testbuf[RF12_MAXDATA], testCounter;
@@ -877,13 +889,15 @@ void loop() {
      
       measureIn= *(PayloadIn*) rf12_data;
       previousMillis2 = currentMillis1;
-      bat2 = 0;   
+      bat2 = 0; 
+      x1=0;  
       }
     
     if(rf12_hdr == 35 || rf12_hdr == 3){
       measureIn2= *(PayloadIn2*) rf12_data;
       previousMillis1 = currentMillis3;
       bat1 = 0;
+      x2 =0;
       if (tmp==0)
     {
       tmpLow=measureIn2.temp;
@@ -952,7 +966,30 @@ void homeScreenOut()
   if (measureOut.lobat == 0 && bat3 == 0)
   lcd.print(F("Good"));
   else{
+ if (x== 0){
+      x=1;
+     DateTime now = RTC.now(); 
+     mstamp=now.minute();  
+     mostamp=now.month();
+     dstamp= now.day(); 
+      if (now.hour() > 12)
+     hstamp = now.hour()-12;  
+     else
+     hstamp = now.hour();  
+ }
  badBat();
+    lcd.print(mostamp);
+    lcd.print('/');
+    lcd.print(dstamp);
+    lcd.print(F(" "));
+    lcd.print(hstamp);
+    lcd.print(':');
+    if (mstamp < 10)
+      lcd.print(F("0"));
+    lcd.print(mstamp);
+    Serial.print (hstamp);
+    Serial.print (" : ");
+    Serial.println (mstamp);
   }
 }
 
@@ -983,7 +1020,30 @@ void homeScreenIn()
   if (measureIn.lobat == 0 && bat2==0)
   lcd.print(F("Good"));
   else{
+    if (x1 == 0){
+      x1=1;
+     DateTime now = RTC.now(); 
+     mstamp1=now.minute();  
+     mostamp1=now.month();
+     dstamp1= now.day(); 
+      if (now.hour() > 12)
+     hstamp1 = now.hour()-12;  
+     else
+     hstamp1 = now.hour();  
+ }
  badBat();
+ lcd.print(mostamp1);
+    lcd.print('/');
+    lcd.print(dstamp1);
+    lcd.print(F(" "));
+    lcd.print(hstamp1);
+    lcd.print(':');
+    if (mstamp1 < 10)
+      lcd.print(F("0"));
+    lcd.print(mstamp1);
+    Serial.print (hstamp1);
+     Serial.print (" : ");
+     Serial.println (mstamp1);
   }
 }
 
@@ -1010,10 +1070,33 @@ void homeScreenIn2()
   lcd.print(tmpLow);
   lcd.setCursor(0,3);
   lcd.print(F("Bat "));
-  if (measureIn2.lobat == 0 && bat2==0)
+  if (measureIn2.lobat == 0 && bat1==0)
   lcd.print(F("Good"));
   else{
-        badBat();
+        if (x2 == 0){
+      x2 = 1;
+     DateTime now = RTC.now(); 
+     mstamp2=now.minute();  
+     mostamp2=now.month();
+     dstamp2= now.day(); 
+      if (now.hour() > 12)
+     hstamp2 = now.hour()-12;  
+     else
+     hstamp2 = now.hour();  
+ }
+ badBat();
+ lcd.print(mostamp2);
+    lcd.print('/');
+    lcd.print(dstamp2);
+    lcd.print(F(" "));
+    lcd.print(hstamp2);
+    lcd.print(':');
+    if (mstamp2 < 10)
+      lcd.print(F("0"));
+    lcd.print(mstamp2);
+    Serial.print (hstamp2);
+     Serial.print (" : ");
+     Serial.println (mstamp2);
       }
 }
 
@@ -1037,38 +1120,8 @@ void screenBasics(){
 void badBat(){
     lcd.print(F("Bad"));
     lcd.write(byte(1));
-    if (x==0)
-    {
-     DateTime now = RTC.now(); 
-     mstamp=now.minute();  
-     mostamp=now.month();
-     dstamp= now.day();
-     if (now.hour() > 12)
-     hstamp = now.hour()-12;  
-     else
-     hstamp = now.hour();  
-     x=1;
-     Serial.print (hstamp);
-     Serial.print (" : ");
-     if (now.minute()<10)
-    lcd.print(F("0"));
-    lcd.print(now.minute());
-     Serial.println (mstamp);
-     
-    }
-    lcd.setCursor(9,3);
-    lcd.print(F("           "));
+    lcd.setCursor(8,3);
+    lcd.print(F("            "));
     lcd.setCursor(10,3);
-    lcd.print(mostamp);
-    lcd.print('/');
-    lcd.print(dstamp);
-    lcd.print(F(" "));
-    lcd.print(hstamp);
-    lcd.print(':');
-    if (mstamp < 10)
-      lcd.print(F("0"));
-    lcd.print(mstamp);
-    Serial.print (hstamp);
-     Serial.print (" : ");
-     Serial.println (mstamp);
+    
 }
