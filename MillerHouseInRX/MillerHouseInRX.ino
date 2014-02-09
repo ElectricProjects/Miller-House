@@ -859,6 +859,7 @@ void loop() {
       measureOut= *(PayloadOut*) rf12_data;
       previousMillis3 = currentMillis3;
       bat3 = 0;
+      x=0;
       if (tmp2==0)
     {
       tmpOutLow=measureOut.temp;
