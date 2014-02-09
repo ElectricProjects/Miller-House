@@ -79,6 +79,8 @@ int pkg=0;
 #define DATAFLASH   1   // check for presence of DataFlash memory on JeeLink
 #define FLASH_MBIT  16  // support for various dataflash sizes: 4/8/16 Mbit
 
+#define LED_PIN     4   // activity LED, comment out to disable
+
 #endif
 
 #define COLLECT 0x20 // collect mode, i.e. pass incoming without sending acks
@@ -88,6 +90,12 @@ static unsigned long now () {
   return millis() / 1000;
 }
 
+static void activityLed (byte on) {
+#ifdef LED_PIN
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, !on);
+#endif
+}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // RF12 configuration setup code
@@ -708,16 +716,20 @@ static void handleInput (char c) {
       memcpy(testbuf, stack, top);
       break;
     case 'l': // turn activity LED on or off
-
+      activityLed(value);
       break;
     case 'f': // send FS20 command: <hchi>,<hclo>,<addr>,<cmd>f
       rf12_initialize(0, RF12_868MHZ);
+      activityLed(1);
       fs20cmd(256 * stack[0] + stack[1], stack[2], value);
+      activityLed(0);
       rf12_config(); // restore normal packet listening mode
       break;
     case 'k': // send KAKU command: <addr>,<dev>,<on>k
       rf12_initialize(0, RF12_433MHZ);
+      activityLed(1);
       kakuSend(stack[0], stack[1], value);
+      activityLed(0);
       rf12_config(); // restore normal packet listening mode
       break;
     case 'd': // dump all log markers
@@ -763,7 +775,7 @@ static void handleInput (char c) {
 void setup() {
   Serial.begin(SERIAL_BAUD);
   Serial.print(F("\n[RF12demo.8]"));
-
+  activityLed(0);
   lcd.begin(20, 4);
   lcd.createChar(0, degree);
   lcd.createChar(1, battery);
@@ -832,7 +844,7 @@ void loop() {
     }
    
   if (rf12_recvDone()) {
-
+    activityLed(0);
 
     byte n = rf12_len;
     if (rf12_crc == 0) {
@@ -896,7 +908,7 @@ void loop() {
         rf12_sendStart(RF12_ACK_REPLY, 0, 0);
       }
     }
-
+  activityLed(1);
 
   }
 
@@ -919,10 +931,7 @@ void homeScreenOut()
           previousMillis3=currentMillis3;
           bat3 = 1;
   }
-  Serial.print("In Screen X = ");
-    Serial.println(x);
-    
-    lcd.clear();
+  lcd.clear();
   lcd.print(F("Miller House Out "));
   screenBasics();
   lcd.print(measureOut.temp);
@@ -1028,12 +1037,8 @@ void screenBasics(){
 void badBat(){
     lcd.print(F("Bad"));
     lcd.write(byte(1));
-    Serial.print("Bad Bat X = ");
-    Serial.println(x);
-    
     if (x==0)
     {
-     x=1;
      DateTime now = RTC.now(); 
      mstamp=now.minute();  
      mostamp=now.month();
@@ -1042,14 +1047,15 @@ void badBat(){
      hstamp = now.hour()-12;  
      else
      hstamp = now.hour();  
+     x=1;
      Serial.print (hstamp);
      Serial.print (" : ");
      if (now.minute()<10)
     lcd.print(F("0"));
     lcd.print(now.minute());
-     Serial.println (mstamp); 
+     Serial.println (mstamp);
+     
     }
-    
     lcd.setCursor(9,3);
     lcd.print(F("           "));
     lcd.setCursor(10,3);
