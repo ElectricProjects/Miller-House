@@ -35,7 +35,7 @@ measureOut.wind = 0;
 measureOut.rain = 0;
 measureOut.lobat = 0;
   rf12_initialize(1, RF12_433MHZ, 75);
-  rf12_easyInit(30); // every 30 seconds send out pkg
+  rf12_easyInit(40); // every 40 seconds send out pkg
   Serial.begin(57600);
   delay(50);//wait for power to settle
 }
@@ -48,11 +48,10 @@ value = tmp.anaRead();
     rf12_sleep(0); // turn the radio off
     radioIsOn = 0;
   }
-  if (readoutTimer.poll(5000)) {
+  if (readoutTimer.poll(15000)) {
     calcTemp();
     measureOut.lobat=rf12_lowbat();
   }
-  //byte sending = rf12_easySend( 0,measurement, sizeof measurement);
   byte sending =  rf12_easySend(&measureOut, sizeof measureOut);
   if (aliveTimer.poll(120000)){
     sending = rf12_easySend(0, 0); // always returns 1
