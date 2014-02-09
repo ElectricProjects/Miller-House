@@ -1056,8 +1056,8 @@ void badBat(){
      Serial.println (mstamp);
      
     }
-    lcd.setCursor(10,3);
-    lcd.print(F("          "));
+    lcd.setCursor(9,3);
+    lcd.print(F("           "));
     lcd.setCursor(10,3);
     lcd.print(mostamp);
     lcd.print('/');
